@@ -1,50 +1,54 @@
 (function (enyo) {
-	
+
 	//*@protected
 	/**
-		When a kind is defined that is an _enyo.Mixin_ it is actually
-		instanced immediately as a singleton to be reused by any other
-		kind that cares to apply it.
+		When a kind is defined as an _enyo.Mixin_, it is actually
+		instantiated immediately as a singleton to be reused by any
+		other kinds that care to apply it.
 	*/
 	var store = enyo.mixins = {};
-	
+
 	//*@protected
 	/**
-		Internally used to keep a more clear abstraction between mixins
+		Used internally to keep a clearer abstraction between mixins'
 		knowledge of available features of the framework.
 	*/
 	var features = enyo.mixins.features = [];
-	
+
 	//*@protected
 	var register = function (name, mixin) {
 		if (store[name]) {
 			enyo.error("enyo.createMixin: cannot create " + name + " because " +
 				"it already exists");
-		} 
+		}
 		store[name] = mixin;
 	};
-	
+
 	//*@public
 	/**
 		Creates a reusable hash of the properties to be applied for the
 		the named mixin wherever it is requested.
 	*/
 	var createMixin = enyo.createMixin = function (props) {
-		if (!props) return false;
+		if (!props) {
+			return false;
+		}
 		// we need to grab the name but make sure it isn't stored as
 		// a property on mixin hash
-		var name = props.name
+		var name = props.name;
 		// remove the name
 		delete props.name;
 		// if there isn't a name fail early
-		if (!name) enyo.error("enyo.createMixin: cannot create mixin without name");
+		if (!name) {
+			enyo.error("enyo.createMixin: cannot create mixin without name");
+		}
 		register(name, props);
 	};
-	
+
 	//*@public
 	/**
-		Used internally but accessible to arbitrarily apply a mixin to a
-		class prototype.
+		Used internally but made accessible to arbitrarily apply a mixin
+		to a class prototype.
 	*/
 	var applyMixin = enyo.applyMixin = function (name, proto) {
 		// retrieve the requested mixin
@@ -57,53 +61,74 @@
 		var key;
 		var prop;
 		var fn;
-		// if we can't find the mixin there is nothing we can do
-		if (!mixin) return enyo.warn("enyo.applyMixin: could not find the " +
+		// if we can't find the mixin, there is nothing we can do
+		if (!mixin) {
+			return enyo.warn("enyo.applyMixin: could not find the " +
 			"requested mixin -> " + name + " for " + proto.kindName,
 			"(at the time of request available mixins are: " + enyo.keys(store).join(",") + ")");
-		// if this mixin is already applied nothing we can do
-		if (!!~applied.indexOf(name)) return enyo.warn("enyo.applyMixin: " +
+		}
+		// if this mixin is already applied, there is nothing we can do
+		if (!!~enyo.indexOf(name, applied)) {
+			return enyo.warn("enyo.applyMixin: " +
 			"attempt to apply mixin " + name + " to " + proto.kindName +
 			" multiple times");
-		// we look for the mixin's initialization routine	 
+		}
+		// we look for the mixin's initialization routine
 		ctor = mixin.create;
 		// we look for the mixin's destructor/cleanup routine
 		dtor = mixin.destroy;
 		for (key in mixin) {
-			if (!mixin.hasOwnProperty(key)) continue;
+			if (!mixin.hasOwnProperty(key)) {
+				continue;
+			}
 			// skip the property if it is either of these
-			if ("create" === key || "destroy" === key) continue;
+			if ("create" === key || "destroy" === key) {
+				continue;
+			}
 			prop = mixin[key];
-			// if the prototype has the property and it is a function we
+			// if the prototype has the property and it is a function, we
 			// insert the mixins function but allow it to chain the original
 			// if it wants
 			if (proto[key] && "function" === typeof proto[key]) {
 				fn = proto[key];
-				proto[key] = prop;
+				prop = proto[key] = enyo.proxyMethod(prop);
 				prop._inherited = fn;
 				prop.nom = name + "." + key + "()";
-			} else proto[key] = prop;
+			} else {
+				proto[key] = prop;
+			}
 		}
-		// if there was a constructor plop it in the init routines
+		// special case if this is actually mixin support being applied
+		// because we need to inject a destructor
+		if ("enyo.MixinSupport" === name) {
+			fn = proto.destroy;
+			proto.destroy = function () {
+				_destroy_mixins.call(this);
+				return this.inherited(arguments);
+			};
+			proto.destroy._inherited = fn;
+			proto.destroy.nom = "enyo.MixinSupport.destroy()";
+		}
+		// if there was a constructor, plop it in the init routines
 		if (ctor && "function" === typeof ctor) {
 			ctors.push(ctor);
 			ctor.nom = name + ".create()";
 		}
-		// if there was a destructor plop it in the destuctor routines
+		// if there was a destructor, plop it in the destuctor routines
 		if (dtor && "function" === typeof dtor) {
 			dtors.push(dtor);
 			dtor.nom = name + ".destroy()";
 		}
 		// add the name of this mixin to the applied mixins array
 		applied.push(name);
-		// give each available mixin feature the opportunity to handle properties		 
+		// give each available mixin feature the opportunity to handle properties
 		for (var idx = 0; idx < features.length; ++idx) {
 			features[idx](proto, mixin);
 		}
 	};
-	
+
 	//*@protected
-	var _create_mixins = function () {			  
+	var _create_mixins = function () {
 		var $mixins = this._mixin_create;
 		var len = $mixins.length;
 		var idx = 0;
@@ -113,7 +138,7 @@
 			fn.call(this);
 		}
 	};
-		
+
 	//*@protected
 	var _destroy_mixins = function () {
 		var $mixins = this._mixin_destroy;
@@ -125,18 +150,20 @@
 			fn.call(this);
 		}
 	};
-	
+
 	//*@protected
 	var _post_constructor = function () {
-		if (!this._supports_mixins) return;
+		if (!this._supports_mixins) {
+			return;
+		}
 		// we need to initialize all of the mixins registered to this
 		// kind
 		_create_mixins.call(this);
 	};
-	
+
 	//*@protected
 	/**
-		We add a kind-feature to snag and handle all mixins for a given
+		We add a kind feature to snag and handle all mixins for a given
 		kind.
 	*/
 	enyo.kind.features.push(function (ctor, props) {
@@ -151,39 +178,31 @@
 			applyMixin($mixins[idx], proto);
 		}
 	});
-	
+
 	//*@protected
 	enyo.kind.postConstructors.push(_post_constructor);
-	
+
 	//*@public
 	/**
-		The _enyo.MixinSupport_ mixin allows _enyo.Object_s and
-		sub-kinds to properly have mixin support applied at kind
-		initialization and appropriate cleanup when the object is
-		destroyed.
+		The _enyo.MixinSupport_ mixin allows instances of _enyo.Object_
+		and its subkinds to have proper mixin support applied at kind
+		initialization time, as well as appropriate cleanup when the
+		object is destroyed.
 	*/
 	createMixin({
-		
+
 		// ...........................
 		// PUBLIC PROPERTIES
-		
+
 		//*@public
 		name: "enyo.MixinSupport",
-		
+
 		// ...........................
 		// PROTECTED PROPERTIES
-		
+
 		//*@protected
-		_supports_mixins: true,
-	
-		// ...........................
-		// PROTECTED METHODS
-		
-		//*@protected
-		destroy: function () {
-			_destroy_mixins.call(this);
-		}
-		
+		_supports_mixins: true
+
 	});
- 
+
 }(enyo));

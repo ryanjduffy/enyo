@@ -1,12 +1,16 @@
 /**
-_enyo.Object_ implements the Enyo framework's property publishing system, as
-well as providing several utility functions for its subkinds.
+_enyo.Object_ lies at the heart of the Enyo framework's implementations of
+property publishing, computed properties (via the _ComputedPropertySupport_
+mixin), and data binding (via the _BindingSupport_ mixin). It also provides
+several utility functions for its subkinds.
 
 Published properties are declared in a hash called _published_ within a call
-to _enyo.kind_. Getter and setter methods are automatically generated for
-properties declared in this manner. Also, by convention, the setter for a
-published property will trigger an optional _&lt;propertyName&gt;Changed_ method
-when called.
+to _enyo.kind_. To get and set values for these properties, call
+_get(&lt;propertyName&gt;)_ and _set(&lt;propertyName&gt;, &lt;value&gt;)_,
+respectively.
+
+By convention, the setter for a published property will trigger an optional
+_&lt;propertyName&gt;Changed_ method when called.
 
 For more information, see the [documentation on Published
 Properties](https://github.com/enyojs/enyo/wiki/Published-Properties) in the
@@ -22,8 +26,8 @@ enyo.kind({
 	concat: enyo.concat,
 	//*@public
 	/**
-		An array of strings that represent a mixin to be applied
-		to this class at the end of the constructor routine.
+		An array of strings representing mixins to be applied
+		to this kind at the end of the constructor routine.
 	*/
 	mixins: [
 		"enyo.MixinSupport",
@@ -36,11 +40,13 @@ enyo.kind({
 		enyo._objectCount++;
 		this.importProps(props);
 	},
-	
+
 	importProps: function (props) {
 		if (props) {
 			for (var key in props) {
-				if (!props.hasOwnProperty(key)) continue;
+				if (!props.hasOwnProperty(key)) {
+					continue;
+				}
 				this[key] = props[key];
 			}
 		}
@@ -94,70 +100,101 @@ enyo.kind({
 	},
 	//*@protected
 	/**
-		This method accepts a string property as its only parameter.
-		The value of this property will be evaluated and if it is itself
-		a string the object will attempt to be resolved. The goal is
-		to determine of the the property is a constructor, an instance or
-		nothing. See _lang.js#enyo.findAndInstance_ for more information.
-		
-		If a method exists of the form `{property}FindAndInstance` it will
-		be used as the callback accepting two parameters, the constructor
-		if it was found and the instance if it was found or created,
-		respectively. This allows for those methods to be overloaded by
-		subkinds.
+		Accepts a string property as its only parameter. Evaluates the
+		property and, if the value is itself a string, attempts to resolve
+		an object from the string. The goal is to determine whether the
+		property is a constructor, an instance, or neither. See
+		_lang.js#enyo.findAndInstance_ for more information.
+
+		If a method exists of the form `{property}FindAndInstance`, it will
+		be used as the callback, with two parameters accepted--the constructor
+		(if it was found) and the instance (if it was found or created). This
+		allows for those methods to be overloaded by subkinds.
 	*/
 	findAndInstance: function (property) {
-		// if there isn't a property do nothing
-		if (!enyo.exists(property)) return;
+		// if there isn't a property, do nothing
+		if (!enyo.exists(property)) {
+			return;
+		}
 		var fn = this[property + "FindAndInstance"];
-		// if we have a callback bind it to the given object so that
-		// it will be called under the correct context, if it has
-		// already been bound this is harmless
-		fn = enyo.exists(fn) && "function" === typeof fn? enyo.bind(this, fn): null;
-		// go ahead and call the enyo scoped version of this method
-		return enyo.findAndInstance.call(this, property, fn);
+		// go ahead and call the enyo-scoped version of this method
+		return enyo.findAndInstance.call(this, property, fn, this);
 	},
-	
+
 	//*@public
 	/**
-		Call this method with the name (or path) to the desired property or
-		computed property. If it encounters a computed property it will return
-		the value of that property and not the function. If it cannot find
-		or resolve the requested path relative to the object it will return
-		undefined.
-		
-		This method is backwards compatible and will automatically call any
-		existing _getter_ method that uses the getProperty convention although
-		this convention ought to be replaced using a computed property moving
-		forward.
+		Retrieves the value of a property or computed property.  Pass in the
+		name of (or path to) the desired property or computed property. For
+		computed properties, the value of the property is returned, not the
+		function. Returns undefined if the requested path relative to the
+		object cannot be found or resolved.
+
+		This method is backwards-compatible and will automatically call any
+		existing _getter_ method that uses the getProperty naming convention.
+		(Moving forward, however, Enyo code should use computed properties
+		instead of relying on the getter naming convention.)
 	*/
 	get: function (path) {
 		return enyo.getPath.apply(this, arguments);
 	},
 	//*@public
 	/**
-		Call this method with a property (or path) and a value to be set. This
-		will automatically notify any listeners/observers that the property has
-		been changed if the values are not the same. If the property it finds
-		is a computed property it will pass the intended value to the computed
-		property (but will not return the value).
-		
-		This method is backwards compatible and will call any setter of the
-		setProperty convention although these methods should be replaced with
-		computed properties or observers where necessary.
+		Sets the value of a property (or path). Pass in the property (or path)
+		and the value to be set. If the value is different from the previous
+		value, any listeners/observers of the property will be automatically
+		notified of the change.
+
+		If the property is a computed property, the intended value will be
+		passed to the computed property (but will not be returned).
+
+		This method is backwards-compatible and will call any setter that uses
+		the setProperty naming convention. (Moving forward, however, Enyo code
+		should use computed properties or observers instead of relying on the
+		setter naming convention.)
 	*/
 	set: function (path, value) {
 		return enyo.setPath.apply(this, arguments);
 	},
 
+	//*@public
+	/**
+		Binds a callback to this object. If the object has been destroyed, the
+		bound method will be aborted cleanly with no value returned.
+
+		This method should generally be used instead of `enyo.bind` for running
+		code in the context of an instance of _enyo.Object_ or one of its
+		subkinds.
+	*/
+	bindSafely: function(method/*, bound arguments*/) {
+		var scope = this;
+		if (enyo.isString(method)) {
+			if (this[method]) {
+				method = this[method];
+			} else {
+				throw(['enyo.Object.bindSafely: this["', method, '"] is null (this="', this, '")'].join(''));
+			}
+		}
+		if (enyo.isFunction(method)) {
+			var args = enyo.cloneArray(arguments, 1);
+			return function() {
+				if (scope.destroyed) {
+					return;
+				}
+				var nargs = enyo.cloneArray(arguments);
+				return method.apply(scope, args.concat(nargs));
+			};
+		} else {
+			throw(['enyo.Object.bindSafely: this["', method, '"] is not a function (this="', this, '")'].join(''));
+		}
+	},
 	//*@protected
 	destroy: function () {
-		// JS objects are never truly destroyed (GC'd) until all references are gone,
-		// we might have some delayed action on this object that needs to have access
+		// Since JS objects are never truly destroyed (GC'd) until all references are
+		// gone, we might have some delayed action on this object that needs access
 		// to this flag.
 		this.destroyed = true;
 	},
-	
+
 	_is_object: true
 });
 
@@ -167,6 +204,7 @@ enyo._objectCount = 0;
 
 enyo.Object.subclass = function(ctor, props) {
 	this.publish(ctor, props);
+	this.overload(ctor, props);
 };
 
 enyo.Object.publish = function(ctor, props) {
@@ -176,7 +214,9 @@ enyo.Object.publish = function(ctor, props) {
 		for (var n in pp) {
 			// need to make sure that even though a property is "published"
 			// it does not overwrite any computed properties
-			if (props[n] && enyo.isFunction(props[n]) && props[n].isProperty) continue;
+			if (props[n] && enyo.isFunction(props[n]) && props[n].isProperty) {
+				continue;
+			}
 			enyo.Object.addGetterSetter(n, pp[n], cp);
 		}
 	}
@@ -184,10 +224,34 @@ enyo.Object.publish = function(ctor, props) {
 
 //*@protected
 /**
+	We need to find special cases and ensure that the overloaded
+	getter of a published property of a parent kind is flagged for
+	the global getter and setter.
+*/
+enyo.Object.overload = function (ctor, props) {
+	var proto = ctor.prototype.base? ctor.prototype.base.prototype: {};
+	var regex = /^(get|set).*/;
+	var name;
+	var prop;
+	for (name in props) {
+		if (!regex.test(name)) {
+			continue;
+		}
+		prop = props[name];
+		if ("function" === typeof prop) {
+			if (proto[name]) {
+				prop.overloaded = true;
+			}
+		}
+	}
+};
+
+//*@protected
+/**
 	This method creates a getter/setter for a published property of
-	an _enyo.Object_ but is deprecated. It is maintained for backwards
-	compatability purposes. The prefered method is to mark public and
-	protected (private) methods and properties using documentation or
+	an _enyo.Object_, but is deprecated. It is maintained for purposes
+	of backwards compatability. The preferred method is to mark public
+	and protected (private) methods and properties using documentation or
 	other means and rely on the _get_ and _set_ methods of _enyo.Object_
 	instances.
 */
@@ -200,17 +264,17 @@ enyo.Object.addGetterSetter = function (property, value, proto) {
 	fn = proto[getter];
 	// if there isn't already a getter provided create one
 	if ("function" !== typeof fn) {
-		fn = proto[getter] = function () {return this.get(property)};
+		fn = proto[getter] = function () {return this.get(property);};
 		fn.overloaded = false;
 	} else if (false !== fn.overloaded) {
 		// otherwise we need to mark it as having been overloaded
 		// so the global getter knows not to ignore it
 		fn.overloaded = true;
 	}
-	// if there isn't already a setter provided create one
+	// if there isn't already a setter provided, create one
 	fn = proto[setter];
 	if ("function" !== typeof fn) {
-		fn = proto[setter] = function () {return this.set(property, arguments[0])};
+		fn = proto[setter] = function () {return this.set(property, arguments[0]);};
 		fn.overloaded = false;
 	} else if (false !== fn.overloaded) {
 		// otherwise we need to mark it as having been overloaded

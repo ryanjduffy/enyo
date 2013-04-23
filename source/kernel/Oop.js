@@ -1,5 +1,4 @@
-﻿
-//*@protected
+﻿//*@protected
 /**
 	Default properties of enyo kinds to concatenate as opposed to
 	overwriting. These are automatically used unless explicitly
@@ -34,7 +33,7 @@ enyo.handleConcatenatedProperties = function (ctor, proto) {
 //* @public
 /**
 	Creates a JavaScript constructor function with a prototype defined by
-	_inProps_.
+	_inProps_. __All constructors must have a unique name__.
 
 	_enyo.kind_ makes it easy to build a constructor-with-prototype (like a
 	class) that has advanced features like prototype-chaining (inheritance).
@@ -79,16 +78,24 @@ enyo.kind = function(inProps) {
 	// create our prototype
 	//ctor.prototype = isa ? enyo.delegate(isa) : {};
 	enyo.setPrototype(ctor, isa ? enyo.delegate(isa) : {});
-	
+
 	// there are special cases where a base class has a property
 	// that may need to be concatenated with a subclasses implementation
 	// as opposed to completely overwriting it...
 	enyo.handleConcatenatedProperties(ctor.prototype, inProps);
-	
+
 	// put in our props
 	enyo.mixin(ctor.prototype, inProps);
 	// alias class name as 'kind' in the prototype
-	ctor.prototype.kindName = name.length? name: kind;
+	// but we actually only need to set this if a new name was used
+	// not if it is inheriting from a kind anonymously
+	if (name) {
+		ctor.prototype.kindName = name;
+	}
+	// this is for anonymous constructors
+	else {
+		ctor.prototype.kindName = base && base.prototype? base.prototype.kindName: "";
+	}
 	// cache superclass constructor
 	ctor.prototype.base = base;
 	// reference our real constructor
@@ -96,12 +103,20 @@ enyo.kind = function(inProps) {
 	// support pluggable 'features'
 	enyo.forEach(enyo.kind.features, function(fn){ fn(ctor, inProps); });
 	// put reference into namespace
-	enyo.setPath(name, ctor);
+	if (name && !enyo.getPath(name)) {
+		enyo.setPath(name, ctor);
+	}
+	else if (name) {
+		enyo.error("enyo.kind: " + name + " is already in use by another " +
+			"kind, all kind definitions must have unique names.");
+	}
 	return ctor;
 };
 
 /**
-	Creates a Singleton
+	Creates a Singleton of a given kind with a given definition.
+	__The name property will be the instance name of the singleton
+	and must be unique__.
 
 		enyo.singleton({
 			kind: Control,
@@ -122,16 +137,16 @@ enyo.singleton = function(conf, context) {
 	var name = conf.name;
 	delete(conf.name);
 	// create an unnamed kind and save its constructor's function
-	var kind = enyo.kind(conf);
+	var Kind = enyo.kind(conf);
 	var inst;
 	// create the singleton with the previous name and constructor
-	enyo.setPath.call(context || enyo.global, name, (inst = new kind()));
+	enyo.setPath.call(context || enyo.global, name, (inst = new Kind()));
 	return inst;
 };
 
 //* @protected
 enyo.kind.makeCtor = function() {
-  return function() {;
+	return function() {
 		if (!(this instanceof arguments.callee)) {
 			throw "enyo.kind: constructor called directly, not using 'new'";
 		}
@@ -148,11 +163,11 @@ enyo.kind.makeCtor = function() {
 			// post-constructor initialization
 			this.constructed.apply(this, arguments);
 		}
-		
+
 		for (var idx = 0; idx < enyo.kind.postConstructors.length; ++idx) {
 			enyo.kind.postConstructors[idx].apply(this, cargs);
 		}
-		
+
 		if (result) {
 			return result;
 		}
@@ -290,7 +305,8 @@ enyo.constructorForKind = function(inKind) {
 		//
 		// Note that kind "Foo" will resolve to enyo.Foo before resolving to global "Foo".
 		// This is important so "Image" will map to built-in Image object, instead of enyo.Image control.
-		return enyo._kindCtors[inKind] = enyo.Theme[inKind] || enyo[inKind] || enyo.getPath.call(enyo, inKind, true) || window[inKind] || enyo.getPath(inKind);
+		enyo._kindCtors[inKind] = enyo.Theme[inKind] || enyo[inKind] || enyo.getPath.call(enyo, inKind, true) || window[inKind] || enyo.getPath(inKind);
+		return enyo._kindCtors[inKind];
 	}
 	return enyo.defaultCtor;
 };

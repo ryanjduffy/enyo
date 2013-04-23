@@ -15,7 +15,7 @@ enyo.kind({
 	name: "enyo.Input",
 	published: {
 		/**
-			Value of the input.	 Use this property only to initialize the value.
+			Value of the input. Use this property only to initialize the value.
 			Call _getValue_ and _setValue_ to manipulate the value at runtime.
 		*/
 		value: "",
@@ -112,17 +112,6 @@ enyo.kind({
 	},
 	clear: function() {
 		this.setValue("");
-	},
-	focus: function() {
-		if (this.hasNode()) {
-			this.node.focus();
-		}
-	},
-	//* Returns true if the Input is focused.
-	hasFocus: function() {
-		if (this.hasNode()) {
-			return document.activeElement === this.node;
-		}
 	},
 	// note: we disallow dragging of an input to allow text selection on all platforms
 	dragstart: function() {
