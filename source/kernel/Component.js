@@ -78,7 +78,7 @@ enyo.kind({
 	},
 	defaultKind: "Component",
 	handlers: {},
-	mixins: ["enyo.ApplicationSupport"],
+	mixins: ["enyo.MixinComponentSupport", "enyo.ApplicationSupport"],
 	__jobs: {},
 	toString: function() {
 		return this.kindName;
@@ -535,6 +535,25 @@ enyo.kind({
 			clearTimeout(this.__jobs[inJobName]);
 			delete this.__jobs[inJobName];
 		}
+	},
+	/**
+		Execute the method _inJob_ immediately, then prevent
+		any other calls to throttleJob with the same _inJobName_ from running
+		for the	next _inWait_ milliseconds.
+	*/
+	throttleJob: function(inJobName, inJob, inWait) {
+		// if we still have a job with this name pending, return immediately
+		if (this.__jobs[inJobName]) {
+			return;
+		}
+		// allow strings as job names, they map to local method names
+		if (enyo.isString(inJob)) {
+			inJob = this[inJob];
+		}
+		inJob.call(this);
+		this.__jobs[inJobName] = setTimeout(this.bindSafely(function() {
+			this.stopJob(inJobName);
+		}), inWait);
 	}
 });
 

@@ -133,7 +133,7 @@
 			part = path.substring(0, idx);
 			path = path.slice(idx+1);
 
-			if (typeof cur[part] in {"object":"","function":""}) {
+			if (cur[part] && typeof cur[part] in {"object":"","function":""}) {
 				if (cur[part]._is_object) {
 					return cur[part].get(path);
 				} else {
@@ -144,20 +144,6 @@
 
 		// otherwise we've reached the end so return whatever we have
 		return val;
-	};
-
-	//*@protected
-	/**
-		An internally-used method to proxy functions (similar to but not exactly
-		the same as enyo.bind) such that they will be called under the correct context
-		but with a reference to the correct arguments at the time they are called.
-		Accepts two parameters--the function to be called and the context under
-		which to call it.
-	*/
-	enyo.proxyMethod = function (fn, context) {
-		return function () {
-			return fn.apply(context || this, arguments);
-		};
 	};
 
 	//*@public

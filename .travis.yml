@@ -1,0 +1,7 @@
+language: php
+php:
+  - 5.4
+install: "npm -g install jshint"
+before_script:
+  - php -S localhost:8000 &
+script: "/bin/bash ./travis-ci.sh"

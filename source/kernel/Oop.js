@@ -4,7 +4,7 @@
 	overwriting. These are automatically used unless explicitly
 	removed.
 */
-enyo.concat = ["concat", "bindings"];
+enyo.concat = ["concat"];
 
 //*@protected
 /**
@@ -103,7 +103,7 @@ enyo.kind = function(inProps) {
 	// support pluggable 'features'
 	enyo.forEach(enyo.kind.features, function(fn){ fn(ctor, inProps); });
 	// put reference into namespace
-	if (name && !enyo.getPath(name)) {
+	if ((name && !enyo.getPath(name)) || enyo.kind.allowOverride) {
 		enyo.setPath(name, ctor);
 	}
 	else if (name) {
@@ -225,15 +225,7 @@ enyo.kind.inherited = function (originals, replacements) {
 	// one-off methods are the fast track
 	var target = originals.callee;
 	var fn = target._inherited;
-	// the possible exception are proxied methods being
-	// executed from within a container under a different
-	// context (shared methods) so we have to check one
-	// level up in these cases to ensure we find the correct
-	// method
-	if (!fn || "function" !== typeof fn) {
-		target = target.caller || {};
-		fn = target._inherited;
-	}
+
 	// regardless of how we got here, just ensure we actually
 	// have a function to call or else we throw a console
 	// warning to notify developers they are calling a
@@ -251,7 +243,12 @@ enyo.kind.inherited = function (originals, replacements) {
 //
 enyo.kind.features.push(function(ctor, props) {
 	// install common statics
-	enyo.mixin(ctor, enyo.kind.statics);
+	if (!ctor.subclass) {
+		ctor.subclass = enyo.kind.statics.subclass;
+	}
+	if (!ctor.extend) {
+		ctor.extend = enyo.kind.statics.extend;
+	}
 	// move props statics to constructor
 	if (props.statics) {
 		enyo.mixin(ctor, props.statics);
