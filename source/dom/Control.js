@@ -8,7 +8,7 @@
 	If you make changes to _enyo.Control_, be sure to add or update the appropriate
 	[unit tests](https://github.com/enyojs/enyo/tree/master/tools/test/core/tests).
 
-	For more information, see the documentation on
+	For more information, see the enyo.getDocument()ation on
 	<a href="https://github.com/enyojs/enyo/wiki/Creating-Controls">Controls</a>
 	in the Enyo Developer Guide.
 */
@@ -410,7 +410,7 @@ enyo.kind({
 		if(enyo.platform.android || enyo.platform.androidChrome || enyo.platform.blackberry) {
 			return;
 		}
-		document.getElementsByTagName("body")[0].className += " webkitOverflowScrolling";
+		enyo.getDocument().getElementsByTagName("body")[0].className += " webkitOverflowScrolling";
 	},
 	//
 	//
@@ -457,7 +457,7 @@ enyo.kind({
 		var pn = enyo.dom.byId(inParentNode);
 		var noFit = enyo.exists(this.fit) && this.fit === false;
 		//console.log(noFit);
-		if (pn == document.body && !noFit) {
+		if (pn == enyo.getDocument().body && !noFit) {
 			this.setupBodyFitting();
 		} else if (this.fit) {
 			this.addClass("enyo-fit enyo-clip");
@@ -476,7 +476,7 @@ enyo.kind({
 		return this;
 	},
 	/**
-		Uses _document.write_ to output the control into the document.
+		Uses _enyo.getDocument().write_ to output the control into the document.
 		If the control has _fit: true_ defined, appropriate styles will be set
 		to have it expand to fill its container.
 
@@ -494,7 +494,7 @@ enyo.kind({
 		this.addClass("enyo-no-touch-action");
 		// add css to enable hw-accelerated scrolling on non-Android platforms (ENYO-900, ENYO-901)
 		this.setupOverflowScrolling();
-		document.write(this.generateHtml());
+		enyo.getDocument().write(this.generateHtml());
 		// post-rendering tasks
 		if (this.generated) {
 			this.rendered();
@@ -547,7 +547,7 @@ enyo.kind({
 	//* Returns true if the control is focused.
 	hasFocus: function() {
 		if (this.hasNode()) {
-			return document.activeElement === this.node;
+			return enyo.getDocument().activeElement === this.node;
 		}
 	},
 	/**
@@ -605,8 +605,8 @@ enyo.kind({
 		return {
 			top		: t,
 			left	: l,
-			bottom	: document.body.offsetHeight - t - h,
-			right   : document.body.offsetWidth  - l - w,
+			bottom	: enyo.getDocument().body.offsetHeight - t - h,
+			right   : enyo.getDocument().body.offsetWidth  - l - w,
 			height	: h,
 			width	: w
 		};
@@ -763,7 +763,7 @@ enyo.kind({
 	},
 	renderNode: function() {
 		this.teardownRender();
-		this.node = document.createElement(this.tag);
+		this.node = enyo.getDocument().createElement(this.tag);
 		this.addNodeToParent();
 		this.generated = true;
 	},

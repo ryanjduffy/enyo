@@ -92,12 +92,12 @@ enyo.requiresWindow(function() {
 			}
 		},
 		findTarget: function(e) {
-			return document.elementFromPoint(e.clientX, e.clientY);
+			return enyo.getDocument().elementFromPoint(e.clientX, e.clientY);
 		},
 		// NOTE: will find only 1 element under the touch and
 		// will fail if an element is positioned outside the bounding box of its parent
 		findTargetTraverse: function(inNode, inX, inY) {
-			var n = inNode || document.body;
+			var n = inNode || enyo.getDocument().body;
 			var o = this.calcNodeOffset(n);
 			if (o && n != this.excludedTarget) {
 				var x = inX - o.left;
@@ -122,12 +122,12 @@ enyo.requiresWindow(function() {
 			});
 			if (enyo.platform.androidChrome <= 18 || enyo.platform.silk === 2) {
 				// HACK: on Chrome for Android v18 on devices with higher density displays,
-				// document.elementFromPoint expects screen coordinates, not document ones
+				// enyo.getDocument().elementFromPoint expects screen coordinates, not document ones
 				// bug also appears on Kindle Fire HD
 				this.findTarget = function(e) {
-					return document.elementFromPoint(e.screenX, e.screenY);
+					return enyo.getDocument().elementFromPoint(e.screenX, e.screenY);
 				};
-			} else if (!document.elementFromPoint) {
+			} else if (!enyo.getDocument().elementFromPoint) {
 				this.findTarget = function(e) {
 					return this.findTargetTraverse(null, e.clientX, e.clientY);
 				};

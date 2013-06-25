@@ -159,8 +159,8 @@ enyo.gesture.events = {
 
 // Firefox mousewheel handling
 enyo.requiresWindow(function() {
-	if (document.addEventListener) {
-		document.addEventListener("DOMMouseScroll", function(inEvent) {
+	if (enyo.getDocument().addEventListener) {
+		enyo.getDocument().addEventListener("DOMMouseScroll", function(inEvent) {
 			var e = enyo.clone(inEvent);
 			e.preventDefault = function() {
 				inEvent.preventDefault();

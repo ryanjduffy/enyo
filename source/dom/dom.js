@@ -9,7 +9,7 @@ enyo.requiresWindow = function(inFunction) {
 
 enyo.dom = {
 	/**
-		Shortcut for _document.getElementById_ if _id_ is a string, otherwise returns _id_.
+		Shortcut for _enyo.getDocument().getElementById_ if _id_ is a string, otherwise returns _id_.
 		Uses _window.document_ unless a document is specified in the (optional) _doc_
 		parameter.
 
@@ -17,7 +17,7 @@ enyo.dom = {
 			var domNode = enyo.dom.byId(node);
 	*/
 	byId: function(id, doc){
-		return (typeof id == "string") ? (doc || document).getElementById(id) : id;
+		return (typeof id == "string") ? (doc || enyo.getDocument()).getElementById(id) : id;
 	},
 	/**
 		return string with ampersand, less-than, and greater-than characters
@@ -106,7 +106,7 @@ enyo.dom = {
 		return s;
 	},
 	getFirstElementByTagName: function(inTagName) {
-		var e = document.getElementsByTagName(inTagName);
+		var e = enyo.getDocument().getElementsByTagName(inTagName);
 		return e && e[0];
 	},
 	applyBodyFit: function() {
@@ -124,13 +124,13 @@ enyo.dom = {
 		if (window.innerWidth) {
 			return window.innerWidth;
 		}
-		if (document.body && document.body.offsetWidth) {
-			return document.body.offsetWidth;
+		if (enyo.getDocument().body && enyo.getDocument().body.offsetWidth) {
+			return enyo.getDocument().body.offsetWidth;
 		}
-		if (document.compatMode=='CSS1Compat' &&
-			document.documentElement &&
-			document.documentElement.offsetWidth ) {
-			return document.documentElement.offsetWidth;
+		if (enyo.getDocument().compatMode=='CSS1Compat' &&
+			enyo.getDocument().documentElement &&
+			enyo.getDocument().documentElement.offsetWidth ) {
+			return enyo.getDocument().documentElement.offsetWidth;
 		}
 		return 320;
 	},
@@ -138,13 +138,13 @@ enyo.dom = {
 		if (window.innerHeight) {
 			return window.innerHeight;
 		}
-		if (document.body && document.body.offsetHeight) {
-			return document.body.offsetHeight;
+		if (enyo.getDocument().body && enyo.getDocument().body.offsetHeight) {
+			return enyo.getDocument().body.offsetHeight;
 		}
-		if (document.compatMode=='CSS1Compat' &&
-			document.documentElement &&
-			document.documentElement.offsetHeight ) {
-			return document.documentElement.offsetHeight;
+		if (enyo.getDocument().compatMode=='CSS1Compat' &&
+			enyo.getDocument().documentElement &&
+			enyo.getDocument().documentElement.offsetHeight ) {
+			return enyo.getDocument().documentElement.offsetHeight;
 		}
 		return 480;
 	},
@@ -245,8 +245,8 @@ enyo.dom = {
 			totalHeight = relativeToNode.offsetHeight;
 			totalWidth = relativeToNode.offsetWidth;
 		} else {
-			totalHeight = (document.body.parentNode.offsetHeight > this.getWindowHeight() ? this.getWindowHeight() - document.body.parentNode.scrollTop : document.body.parentNode.offsetHeight);
-			totalWidth = (document.body.parentNode.offsetWidth > this.getWindowWidth() ? this.getWindowWidth() - document.body.parentNode.scrollLeft : document.body.parentNode.offsetWidth);
+			totalHeight = (enyo.getDocument().body.parentNode.offsetHeight > this.getWindowHeight() ? this.getWindowHeight() - enyo.getDocument().body.parentNode.scrollTop : enyo.getDocument().body.parentNode.offsetHeight);
+			totalWidth = (enyo.getDocument().body.parentNode.offsetWidth > this.getWindowWidth() ? this.getWindowWidth() - enyo.getDocument().body.parentNode.scrollLeft : enyo.getDocument().body.parentNode.offsetWidth);
 		}
 
 		if (node.offsetParent) {

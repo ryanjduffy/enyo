@@ -13,25 +13,30 @@ enyo.dispatcher = {
 	// feature plugins (aka filters)
 	features: [],
 	connect: function() {
-		var d = enyo.dispatcher, i, n;
+		var d = enyo.dispatcher, i, n, doc = enyo.getDocument();
 		for (i=0; (n=d.events[i]); i++) {
-			d.listen(document, n);
+			d.listen(doc, n);
 		}
 		for (i=0; (n=d.cssEvents[i]); i++) {
-			d.listen(document, n);
+			d.listen(doc, n);
 		}
-		for (i=0; (n=d.windowEvents[i]); i++) {
-			// Chrome Packaged Apps don't like "unload"
-			if(n === "unload" &&
-				(typeof window.chrome === "object") &&
-				window.chrome.app) {
-				continue;
-			}
 
-			d.listen(window, n);
+		if(!this.windowEventsRegistered) {
+			for (i=0; (n=d.windowEvents[i]); i++) {
+				// Chrome Packaged Apps don't like "unload"
+				if(n === "unload" &&
+					(typeof window.chrome === "object") &&
+					window.chrome.app) {
+					continue;
+				}
+
+				d.listen(window, n);
+			}
+			this.windowEventsRegistered = true;
 		}
+		
 		for (i=0; (n=d.cssEvents[i]); i++) {
-			d.listen(document, n);
+			d.listen(doc, n);
 		}
 	},
 	listen: function(inListener, inEventName, inHandler) {
@@ -126,7 +131,20 @@ enyo.iePreventDefault = function() {
 };
 
 enyo.dispatch = function(inEvent) {
-	return enyo.dispatcher.dispatch(inEvent);
+    var doc = enyo.getDocument();
+    var hasDocTarget = inEvent.currentTarget;
+
+    if(hasDocTarget) {
+    	enyo.setDocument(inEvent.currentTarget);
+    }
+
+    var result = enyo.dispatcher.dispatch(inEvent);
+
+    if(hasDocTarget) {
+	    enyo.setDocument(doc);
+	}
+	
+    return result;
 };
 
 enyo.bubble = function(inEvent) {

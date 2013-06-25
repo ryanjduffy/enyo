@@ -7,7 +7,7 @@
 		}
 		var p$ = ["perspective", "WebkitPerspective", "MozPerspective", "msPerspective", "OPerspective"];
 		for (var i=0, p; (p=p$[i]); i++) {
-			if (typeof document.body.style[p] != "undefined") {
+			if (typeof enyo.getDocument().body.style[p] != "undefined") {
 				return true;
 			}
 		}
@@ -24,11 +24,11 @@
 		return this._cssTransformProp;
 	};
 	enyo.dom.getStyleTransformProp = function() {
-		if (this._styleTransformProp || !document.body) {
+		if (this._styleTransformProp || !enyo.getDocument().body) {
 			return this._styleTransformProp;
 		}
 		for (var i = 0, p; (p = styleTransformProps[i]); i++) {
-			if (typeof document.body.style[p] != "undefined") {
+			if (typeof enyo.getDocument().body.style[p] != "undefined") {
 				this._styleTransformProp = p;
 				return this._styleTransformProp;
 			}
@@ -79,7 +79,7 @@
 
 	*/
 	enyo.dom.canAccelerate = function() {
-		return this.accelerando !== undefined ? this.accelerando: document.body && (this.accelerando = this.calcCanAccelerate());
+		return this.accelerando !== undefined ? this.accelerando: enyo.getDocument().body && (this.accelerando = this.calcCanAccelerate());
 	};
 	/**
 		Applies a series of transforms to _inControl_, using the platform's prefixed transform property.

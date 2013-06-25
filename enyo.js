@@ -5,8 +5,16 @@
 
 	enyo = window.enyo || {};
 
+	enyo.getDocument = function() {
+		return enyo._document || window.document;
+	}
+
+	enyo.setDocument = function(doc) {
+		enyo._document = doc;
+	}
+
 	enyo.locateScript = function(inName) {
-		var scripts = document.getElementsByTagName("script");
+		var scripts = enyo.getDocument().getElementsByTagName("script");
 		for (var i=scripts.length-1, s, src, l=inName.length; (i>=0) && (s=scripts[i]); i--) {
 			if (!s.located) {
 				src = s.getAttribute("src") || "";
@@ -34,7 +42,7 @@
 
 	var script = function(inSrc) {
 		/* jshint evil: true */
-		document.write('<scri' + 'pt src="' + root + "/source/boot/" + inSrc + '"></scri' + 'pt>');
+		enyo.getDocument().write('<scri' + 'pt src="' + root + "/source/boot/" + inSrc + '"></scri' + 'pt>');
 	};
 
 	script("ready.js");

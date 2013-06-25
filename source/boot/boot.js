@@ -27,16 +27,16 @@ enyo.machine = {
 		}
 		var link;
 		if (enyo.runtimeLoading || isLess) {
-			link = document.createElement('link');
+			link = enyo.getDocument().createElement('link');
 			link.href = inPath;
 			link.media = "screen";
 			link.rel = rel;
 			link.type = type;
-			document.getElementsByTagName('head')[0].appendChild(link);
+			enyo.getDocument().getElementsByTagName('head')[0].appendChild(link);
 		} else {
 			link = function() {
 				/* jshint evil: true */
-				document.write('<link href="' + inPath + '" media="screen" rel="' + rel + '" type="' + type + '" />');
+				enyo.getDocument().write('<link href="' + inPath + '" media="screen" rel="' + rel + '" type="' + type + '" />');
 			};
 			enyo.execUnsafeLocalFunction(link);
 		}
@@ -52,18 +52,18 @@ enyo.machine = {
 	script: function(inSrc, onLoad, onError) {
 		/* jshint evil: true */
 		if (!enyo.runtimeLoading) {
-			document.write('<scri' + 'pt src="' + inSrc + '"' + (onLoad ? ' onload="' + onLoad + '"' : '') + (onError ? ' onerror="' + onError + '"' : '') + '></scri' + 'pt>');
+			enyo.getDocument().write('<scri' + 'pt src="' + inSrc + '"' + (onLoad ? ' onload="' + onLoad + '"' : '') + (onError ? ' onerror="' + onError + '"' : '') + '></scri' + 'pt>');
 		} else {
-			var script = document.createElement('script');
+			var script = enyo.getDocument().createElement('script');
 			script.src = inSrc;
 			script.onload = onLoad;
 			script.onerror = onError;
-			document.getElementsByTagName('head')[0].appendChild(script);
+			enyo.getDocument().getElementsByTagName('head')[0].appendChild(script);
 		}
 	},
 	inject: function(inCode) {
 		/* jshint evil: true */
-		document.write('<scri' + 'pt type="text/javascript">' + inCode + "</scri" + "pt>");
+		enyo.getDocument().write('<scri' + 'pt type="text/javascript">' + inCode + "</scri" + "pt>");
 	}
 };
 
